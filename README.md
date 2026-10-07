@@ -29,14 +29,14 @@ Copilot features require the appropriate account access.
 
 1. Open the [Releases page](https://github.com/cconner100/git-desktop-ubuntu/releases)
    and select the newest Ubuntu release, including prereleases.
-2. Download both `git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb` and
-   `git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb.sha256` from its **Assets**.
+2. Download both `git-desktop_3.6.7-beta2-ubuntu.1-1_amd64.deb` and
+   `git-desktop_3.6.7-beta2-ubuntu.1-1_amd64.deb.sha256` from its **Assets**.
 3. Open a terminal in the download directory and run:
 
    ```bash
-   sha256sum --check 'git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb.sha256'
+   sha256sum --check 'git-desktop_3.6.7-beta2-ubuntu.1-1_amd64.deb.sha256'
    sudo apt update
-   sudo apt install './git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb'
+   sudo apt install './git-desktop_3.6.7-beta2-ubuntu.1-1_amd64.deb'
    ```
 
 4. Launch **Git Desktop** from GNOME's application menu, or run:

@@ -129,6 +129,16 @@ jobs:
           sha256sum --check ./*.deb.sha256
           package_version=$(dpkg-deb --field ./*.deb Version)
           package_name=$(basename ./*.deb)
+          # GitHub normalizes '~' and '+' in uploaded asset names. Keep the
+          # Debian version inside the package, and use a portable download name.
+          public_package_name="${package_name//[~]/-}"
+          public_package_name="${public_package_name//+/.}"
+          if [[ "$public_package_name" != "$package_name" ]]; then
+            mv -- "$package_name" "$public_package_name"
+            rm -- "$package_name.sha256"
+            package_name="$public_package_name"
+            sha256sum "$package_name" > "$package_name.sha256"
+          fi
           cat > release-notes.md <<EOF
           Community Ubuntu GNOME port of GitHub Desktop, version ${RELEASE_TAG#ubuntu-v}.
           Package version: $package_version. Architecture: amd64 (x86_64).
@@ -152,7 +162,7 @@ jobs:
             release_flags+=(--prerelease)
           fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" ./*.deb ./*.deb.sha256
+            gh release upload "$RELEASE_TAG" ./*.deb ./*.deb.sha256 --clobber
           else
             gh release create "$RELEASE_TAG" --verify-tag \
               --title "Git Desktop for Ubuntu ${RELEASE_TAG#ubuntu-v}" \
