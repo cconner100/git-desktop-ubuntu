@@ -1,110 +1,168 @@
-# [GitHub Desktop](https://desktop.github.com)
+# Git Desktop for Ubuntu
 
-[GitHub Desktop](https://desktop.github.com/) is an open-source [Electron](https://www.electronjs.org/)-based
-GitHub app. It is written in [TypeScript](https://www.typescriptlang.org) and
-uses [React](https://reactjs.org/).
+A community Ubuntu GNOME port of [GitHub Desktop](https://github.com/desktop/desktop),
+maintained in [cconner100/git-desktop-ubuntu](https://github.com/cconner100/git-desktop-ubuntu).
+Manage local repositories, clone from GitHub, review changes, commit, create
+branches, and push or pull using a desktop interface.
 
-<picture>
-  <source
-    srcset="https://user-images.githubusercontent.com/634063/202742848-63fa1488-6254-49b5-af7c-96a6b50ea8af.png"
-    media="(prefers-color-scheme: dark)"
-  />
-  <img
-    width="1072"
-    src="https://user-images.githubusercontent.com/634063/202742985-bb3b3b94-8aca-404a-8d8a-fd6a6f030672.png"
-    alt="A screenshot of the GitHub Desktop application showing changes being viewed and committed with two attributed co-authors"
-  />
-</picture>
+This fork keeps the upstream Electron, React, and TypeScript interface and adds
+Ubuntu packaging and GNOME desktop integration. It is not an official GitHub
+release or a rewrite using GTK/libadwaita widgets.
 
-## Where can I get it?
+## Version and requirements
 
-Download the official installer for your operating system:
+| Item | Current release |
+| --- | --- |
+| Application version | **3.6.7-beta2** (prerelease) |
+| Ubuntu package version | **3.6.7~beta2-1** |
+| Release tag | **ubuntu-v3.6.7-beta2** |
+| Target desktops | Ubuntu **24.04 LTS** and **26.04 LTS**, with GNOME |
+| Architecture | **amd64 / x86_64** (Intel or AMD 64-bit) |
 
- - [macOS](https://central.github.com/deployments/desktop/desktop/latest/darwin)
- - [macOS (Apple silicon)](https://central.github.com/deployments/desktop/desktop/latest/darwin-arm64)
- - [Windows](https://central.github.com/deployments/desktop/desktop/latest/win32)
- - [Windows machine-wide install](https://central.github.com/deployments/desktop/desktop/latest/win32?format=msi)
+ARM64 and older Ubuntu releases have not been validated. The application includes
+Electron, Git, credential helpers, and the Copilot runtime. Installing a release
+package does not require Node.js, Yarn, or build tools. Network access is needed
+for missing Ubuntu dependencies, GitHub sign-in, and remote repository operations.
+Copilot features require the appropriate account access.
 
-Linux is not officially supported; however, you can find installers created for Linux from a fork of GitHub Desktop in the [Community Releases](https://github.com/desktop/desktop#community-releases) section.
+## Install on Ubuntu with GNOME
 
-### Beta Channel
+1. Open the [Releases page](https://github.com/cconner100/git-desktop-ubuntu/releases)
+   and select the newest Ubuntu release, including prereleases.
+2. Download both `git-desktop_3.6.7~beta2-1_amd64.deb` and
+   `git-desktop_3.6.7~beta2-1_amd64.deb.sha256` from its **Assets**.
+3. Open a terminal in the download directory and run:
 
-Want to test out new features and get fixes before everyone else? Install the
-beta channel to get access to early builds of Desktop:
+   ```bash
+   sha256sum --check 'git-desktop_3.6.7~beta2-1_amd64.deb.sha256'
+   sudo apt update
+   sudo apt install './git-desktop_3.6.7~beta2-1_amd64.deb'
+   ```
 
- - [macOS](https://central.github.com/deployments/desktop/desktop/latest/darwin?env=beta)
- - [macOS (Apple silicon)](https://central.github.com/deployments/desktop/desktop/latest/darwin-arm64?env=beta)
- - [Windows](https://central.github.com/deployments/desktop/desktop/latest/win32?env=beta)
- - [Windows (ARM64)](https://central.github.com/deployments/desktop/desktop/latest/win32-arm64?env=beta)
+4. Launch **Git Desktop** from GNOME's application menu, or run:
 
-The release notes for the latest beta versions are available [here](https://desktop.github.com/release-notes/?env=beta).
+   ```bash
+   git-desktop
+   ```
 
-### Past Releases
-You can find past releases at https://desktop.githubusercontent.com. After installation of a past version, the auto update functionality will attempt to download the latest version. 
+For later releases, substitute the filenames shown in that release's Assets.
+Use `apt install` rather than opening the archive manually so Ubuntu installs
+its declared runtime dependencies. The runtime is installed under
+`/opt/git-desktop`; its launcher is `/usr/bin/git-desktop`.
 
-### Community Releases
+### Upgrade or uninstall
 
-There are several community-supported package managers that can be used to
-install GitHub Desktop:
- - Windows users can install using [winget](https://docs.microsoft.com/en-us/windows/package-manager/winget/) `c:\> winget install github-desktop` or [Chocolatey](https://chocolatey.org/) `c:\> choco install github-desktop`
- - macOS users can install using [Homebrew](https://brew.sh/) package manager:
-      `$ brew install --cask github`
+Download the newer package and checksum, verify them, and install the new `.deb`
+with the same APT command. Linux releases use package upgrades; the application
+does not use the upstream Windows/macOS automatic updater.
 
-Installers for various Linux distributions can be found on the
-[`shiftkey/desktop`](https://github.com/shiftkey/desktop) fork.
+```bash
+sudo apt remove git-desktop
+```
 
-## Is GitHub Desktop right for me? What are the primary areas of focus?
+Uninstalling leaves your repositories and personal application data intact.
 
-[This document](https://github.com/desktop/desktop/blob/development/docs/process/what-is-desktop.md) describes the focus of GitHub Desktop and who the product is most useful for.
+## GitHub sign-in and company repositories
 
-## I have a problem with GitHub Desktop
+Sign in through your browser from Git Desktop. Browser authentication callbacks
+and **Open in Desktop** links are registered with Ubuntu. Credentials are stored
+using libsecret and the GNOME keyring.
 
-Note: The [GitHub Desktop Code of Conduct](https://github.com/desktop/desktop/blob/development/CODE_OF_CONDUCT.md) applies in all interactions relating to the GitHub Desktop project.
+Without custom build credentials, this fork uses the development OAuth app
+provided in upstream source. Company organizations may require approval for that
+app even when the same repositories work in your browser or the official app.
+If a company repository is missing or GitHub returns an OAuth access restriction:
 
-First, please search the [open issues](https://github.com/desktop/desktop/issues?q=is%3Aopen)
-and [closed issues](https://github.com/desktop/desktop/issues?q=is%3Aclosed)
-to see if your issue hasn't already been reported (it may also be fixed).
+1. Open [GitHub Settings → Applications → Authorized OAuth Apps](https://github.com/settings/applications).
+2. Select the OAuth app used for this build and check **Organization access**.
+3. Grant access if permitted, or request approval from an organization owner.
+4. Refresh the repository list in Git Desktop after approval.
 
-There is also a list of [known issues](https://github.com/desktop/desktop/blob/development/docs/known-issues.md)
-that are being tracked against Desktop, and some of these issues have workarounds.
+For organizations using SAML SSO, establish an active organization SSO session
+before authorizing the app. See [GitHub's OAuth authorization guidance](https://docs.github.com/en/apps/oauth-apps/using-oauth-apps/authorizing-oauth-apps).
+This port follows GitHub's repository permissions and organization policies.
 
-If you can't find an issue that matches what you're seeing, open a [new issue](https://github.com/desktop/desktop/issues/new/choose),
-choose the right template and provide us with enough information to investigate
-further.
+Release maintainers can configure their own OAuth app with the repository secrets
+`DESKTOP_OAUTH_CLIENT_ID` and `DESKTOP_OAUTH_CLIENT_SECRET`. These values are build
+inputs for a desktop client, not a place to store personal access tokens. A
+production OAuth app must use the `x-github-desktop-auth` callback scheme.
 
-## The issue I reported isn't fixed yet. What can I do?
+## What this port adds
 
-If nobody has responded to your issue in a few days, you're welcome to respond to it with a friendly ping in the issue. Please do not respond more than a second time if nobody has responded. The GitHub Desktop maintainers are constrained in time and resources, and diagnosing individual configurations can be difficult and time consuming. While we'll try to at least get you pointed in the right direction, we can't guarantee we'll be able to dig too deeply into any one person's issue.
+- A self-contained Debian installer and SHA-256 checksum.
+- A GNOME application launcher, desktop identity, icons, and URL handlers.
+- Linux startup handling for browser authentication and clone links.
+- GNOME keyring credential storage and package-based updates.
+- An application-specific AppArmor user-namespace profile for Electron's sandbox.
+- Linux packaging for Copilot's native runtime and FFI loader.
+- Emoji packaging compatible with older and current gemoji data.
+- Automated Ubuntu builds, package installation checks, and application smoke tests.
 
-## How can I contribute to GitHub Desktop?
+The desktop continues to use the upstream interface. Full GNOME Wayland/X11
+integration and live GitHub authentication still require desktop testing; the CI
+smoke test runs under a virtual X11 display. The AppArmor profile allows user
+namespaces for the installed executable and is not a full confinement policy.
 
-The [CONTRIBUTING.md](./.github/CONTRIBUTING.md) document will help you get setup and
-familiar with the source. The [documentation](docs/) folder also contains more
-resources relevant to the project.
+## Build from source
 
-If you're looking for something to work on, check out the [help wanted](https://github.com/desktop/desktop/issues?q=is%3Aissue+is%3Aopen+label%3A%22help%20wanted%22) label.
+```bash
+git clone --branch ubuntu --recurse-submodules https://github.com/cconner100/git-desktop-ubuntu.git
+cd git-desktop-ubuntu
+bash script/linux/build-and-install.sh
+```
 
-## Building Desktop
+The helper runs from a normal Ubuntu terminal, installs prerequisites using sudo,
+builds in a separate cache directory, installs the package, runs smoke tests,
+and launches the application. It preserves the source checkout and copies the
+installer into `dist/`. Use Ubuntu 24.04 for packages intended to run on both
+24.04 and 26.04. A build made on 26.04 is intended for local testing on 26.04.
 
-To setup your development environment for building Desktop, check out: [`setup.md`](./docs/contributing/setup.md).
+See [the Ubuntu build guide](docs/contributing/setup-linux.md) for manual build
+steps, architecture limits, and desktop verification.
 
-## More Resources
+## Automated releases
 
-See [desktop.github.com](https://desktop.github.com) for more product-oriented
-information about GitHub Desktop.
+[Ubuntu package and release](https://github.com/cconner100/git-desktop-ubuntu/actions/workflows/ubuntu.yml)
+runs on changes to the `ubuntu` branch, pull requests, manual runs, and
+`ubuntu-v*` tags. It builds native modules on Ubuntu 24.04, installs the actual
+package, checks shared libraries, runs unit/regression tests and an installed
+application smoke test, and checks installation on Ubuntu 26.04.
 
-See our [getting started documentation](https://docs.github.com/en/desktop/overview/getting-started-with-github-desktop) for more information on how to set up, authenticate, and configure GitHub Desktop.
+A tag whose name matches `ubuntu-v` plus the version in `app/package.json`
+publishes a GitHub Release with the tested `.deb`, its SHA-256 checksum, and
+installation notes. Publication waits for both Ubuntu jobs to succeed.
+Versions containing a prerelease suffix are marked as prereleases. Ordinary
+branch builds provide Actions artifacts without creating a release.
+
+To publish the current version after committing changes:
+
+```bash
+git tag ubuntu-v3.6.7-beta2
+git push origin ubuntu-v3.6.7-beta2
+```
+
+For a new release, update `app/package.json` and the version/installation examples
+in this README before creating the corresponding new tag. Keep tags immutable.
+The workflow uses the repository's built-in `GITHUB_TOKEN` to publish assets;
+a personal access token is not required for release automation.
+
+## Support and upstream
+
+Report Ubuntu-port problems in [this fork's issues](https://github.com/cconner100/git-desktop-ubuntu/issues).
+Include your Ubuntu version, whether you use Wayland or X11, the application
+version, and relevant errors from **Help → Show logs in your File Manager** (or
+`~/.config/Git Desktop/logs`). Remove credentials and private repository details
+before sharing logs.
+
+The original source is [desktop/desktop](https://github.com/desktop/desktop).
+This port starts from upstream commit
+[`bc09e9e8`](https://github.com/desktop/desktop/commit/bc09e9e8).
+The [upstream README](docs/upstream-readme.md) and [contribution guide](.github/CONTRIBUTING.md)
+are retained for background and development information.
 
 ## License
 
-**[MIT](LICENSE)**
-
-The MIT license grant is not for GitHub's trademarks, which include the logo
-designs. GitHub reserves all trademark and copyright rights in and to all
-GitHub trademarks. GitHub's logos include, for instance, the stylized
-Invertocat designs that include "logo" in the file title in the following
-folder: [logos](app/static/logos).
-
-GitHub® and its stylized versions and the Invertocat mark are GitHub's
-Trademarks or registered Trademarks. When using GitHub's logos, be sure to
-follow the GitHub [logo guidelines](https://github.com/logos).
+[MIT](LICENSE). Upstream copyright notices and bundled third-party license
+information are preserved. GitHub's trademarks and logos remain owned by GitHub;
+the MIT license does not grant trademark rights. This is a community project,
+not an official GitHub product or endorsed Ubuntu release.

@@ -21,6 +21,8 @@ import { formatDate } from '../../lib/format-date'
 
 const logoPath = __DARWIN__
   ? 'static/logo-64x64@2x.png'
+  : __LINUX__
+  ? 'static/icon-logo.png'
   : 'static/windows-logo-64x64@2x.png'
 const DesktopLogo = encodePathAsUrl(__dirname, logoPath)
 
@@ -90,8 +92,9 @@ class UpdateInfo extends React.Component<IUpdateInfoProps> {
 export class About extends React.Component<IAboutProps> {
   private get canCheckForUpdates() {
     return (
-      __RELEASE_CHANNEL__ !== 'development' ||
-      this.props.allowDevelopment === true
+      !__LINUX__ &&
+      (__RELEASE_CHANNEL__ !== 'development' ||
+        this.props.allowDevelopment === true)
     )
   }
 
@@ -143,7 +146,7 @@ export class About extends React.Component<IAboutProps> {
 
   private renderUpdateDetails() {
     if (__LINUX__) {
-      return null
+      return <p>Install a newer Debian package to update this application.</p>
     }
 
     if (!this.canCheckForUpdates) {
@@ -231,7 +234,7 @@ export class About extends React.Component<IAboutProps> {
   }
 
   private renderBetaLink() {
-    if (__RELEASE_CHANNEL__ === 'beta') {
+    if (__LINUX__ || __RELEASE_CHANNEL__ === 'beta') {
       return
     }
 
@@ -268,12 +271,7 @@ export class About extends React.Component<IAboutProps> {
         {this.renderUpdateErrors()}
         <DialogContent>
           <Row className="logo">
-            <img
-              src={DesktopLogo}
-              alt="GitHub Desktop"
-              width="64"
-              height="64"
-            />
+            <img src={DesktopLogo} alt={name} width="64" height="64" />
           </Row>
           <h1 id={titleId}>About {name}</h1>
           <p className="no-padding">

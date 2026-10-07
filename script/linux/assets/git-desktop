@@ -1,0 +1,3 @@
+#!/bin/sh
+# Preserve each argument, including repository paths and OAuth callback URLs.
+exec /opt/git-desktop/desktop "$@"

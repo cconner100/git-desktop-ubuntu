@@ -78,6 +78,11 @@ findYarnVersion(path => {
     process.exit(result.status || 1)
   }
 
+  // Video is optional for local smoke tests on unsupported Playwright hosts.
+  if (process.env.DESKTOP_E2E_RECORD_VIDEO === '0') {
+    return
+  }
+
   // Capture output here so CI failures include the Playwright-specific error.
   result = spawnSync(
     process.execPath,

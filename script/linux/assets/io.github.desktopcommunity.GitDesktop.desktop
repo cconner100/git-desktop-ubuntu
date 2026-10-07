@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Git Desktop
+GenericName=Git Client
+Comment=Manage Git repositories and collaborate on GitHub
+Exec=/usr/bin/git-desktop %U
+Icon=io.github.desktopcommunity.GitDesktop
+Terminal=false
+Categories=Development;RevisionControl;
+Keywords=Git;GitHub;Repository;Commit;
+StartupNotify=true
+StartupWMClass=io.github.desktopcommunity.GitDesktop
+MimeType=x-scheme-handler/x-github-client;x-scheme-handler/x-github-desktop-auth;x-scheme-handler/x-github-desktop-dev-auth;

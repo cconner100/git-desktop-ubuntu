@@ -57,6 +57,11 @@ import { CLIAction } from '../lib/cli-action'
 app.setAppLogsPath()
 enableSourceMaps()
 
+if (__LINUX__) {
+  // Match the installed launcher for GNOME window grouping and portal access.
+  app.setDesktopName('io.github.desktopcommunity.GitDesktop.desktop')
+}
+
 let mainWindow: AppWindow | null = null
 
 const launchTime = now()
@@ -241,6 +246,26 @@ async function handleCommandLineArguments(argv: string[]) {
   const args = parseCommandLineArgs(argv, {
     boolean: ['protocol-launcher'],
   })
+
+  if (__LINUX__) {
+    // xdg-open passes browser callbacks as positional arguments on both the
+    // initial launch and second-instance activation.
+    const prefixes = Array.from(possibleProtocols, p => `${p}://`)
+    const protocolURL = args._.find(
+      arg =>
+        typeof arg === 'string' &&
+        prefixes.some(prefix => arg.startsWith(prefix))
+    )
+    if (typeof protocolURL === 'string') {
+      try {
+        new URL(protocolURL)
+        handleAppURL(protocolURL)
+      } catch (e) {
+        log.error('Unable to parse protocol URL', e)
+      }
+      return
+    }
+  }
 
   // Desktop registers it's protocol handler callback on Windows as
   // `[executable path] --protocol-launcher "%1"`. Note that extra command

@@ -198,6 +198,12 @@ class UpdateStore {
    *                       attempt to retrieve the latest available deployment.
    */
   public async checkForUpdates(inBackground: boolean, skipGuidCheck: boolean) {
+    // Linux installations are upgraded by installing a newer Debian package.
+    // Electron's Squirrel updater supports only macOS and Windows.
+    if (__LINUX__) {
+      return
+    }
+
     // An update has been downloaded and the app is waiting to be restarted.
     // Checking for updates again may result in the running app being nuked
     // when it finds a subsequent update on Windows, or the "Quit and Update"

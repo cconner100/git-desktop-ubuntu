@@ -1,9 +1,11 @@
 import { bundleID, companyName, productName, version } from './package.json'
 
 export function getProductName() {
+  const platformProductName =
+    process.platform === 'linux' ? 'Git Desktop' : productName
   return process.env.NODE_ENV === 'development'
-    ? `${productName}-dev`
-    : productName
+    ? `${platformProductName}-dev`
+    : platformProductName
 }
 
 export function getCompanyName() {

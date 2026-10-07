@@ -253,6 +253,10 @@ test.describe('GitHub Desktop - App Launch', () => {
 
 test.describe('Auto-update', () => {
   test.skip(
+    process.platform === 'linux',
+    'Linux installations are upgraded using Debian packages.'
+  )
+  test.skip(
     process.platform === 'win32' && !process.env.DESKTOP_E2E_APP_PATH,
     'Windows auto-update requires an installed Squirrel app, not a packaged app directory.'
   )

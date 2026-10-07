@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+case "$1" in
+  remove|purge)
+    if command -v apparmor_parser >/dev/null 2>&1 &&
+       [ -d /sys/kernel/security/apparmor ]; then
+      # On purge the conffile may already have been deleted; remove by name.
+      printf 'profile git-desktop /opt/git-desktop/desktop flags=(unconfined) { userns, }\n' |
+        apparmor_parser -R || true
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+      update-desktop-database /usr/share/applications
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+      gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+    fi
+    ;;
+esac

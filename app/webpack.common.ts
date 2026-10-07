@@ -4,7 +4,9 @@ import webpack from 'webpack'
 import merge from 'webpack-merge'
 import { getReplacements } from './app-info'
 
-export const externals = ['7zip']
+// Koffi's native module loader must resolve beside its installed package, rather
+// than embedding import.meta and build-machine paths in a renderer chunk.
+export const externals = ['7zip', 'koffi']
 
 const outputDir = 'out'
 export const replacements = getReplacements()

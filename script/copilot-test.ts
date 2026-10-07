@@ -2,9 +2,77 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { chmod, mkdir, readFile, readdir, stat, writeFile } from 'fs/promises'
 import { dirname, join, relative } from 'path'
-import { copyCopilotDependency } from './copilot'
+import { copyCopilotDependency, copyKoffiDependency } from './copilot'
 import { createTempDirectory } from '../app/test/helpers/temp'
 import { getCopilotRuntimePath } from '../app/src/lib/copilot-runtime'
+
+describe('copyKoffiDependency', () => {
+  it('copies the loader with its matching native package for Ubuntu', async t => {
+    const root = await createTempDirectory(t)
+    const source = join(root, 'node_modules')
+    const output = join(root, 'out', 'node_modules')
+    const native = join(source, '@koromix', 'koffi-linux-x64')
+    await mkdir(join(source, 'koffi'), { recursive: true })
+    await mkdir(join(native, 'linux_x64'), { recursive: true })
+    await mkdir(join(native, 'musl_x64'), { recursive: true })
+    await writeFile(
+      join(source, 'koffi', 'package.json'),
+      '{"version":"3.2.1"}'
+    )
+    await writeFile(join(source, 'koffi', 'index.cjs'), 'loader')
+    await writeFile(join(native, 'package.json'), '{"version":"3.2.1"}')
+    await writeFile(join(native, 'linux_x64', 'koffi.node'), 'native module')
+    await writeFile(join(native, 'musl_x64', 'koffi.node'), 'musl module')
+
+    copyKoffiDependency(source, output, 'linux', 'x64')
+
+    assert.strictEqual(
+      await readFile(join(output, 'koffi', 'index.cjs'), 'utf8'),
+      'loader'
+    )
+    assert.strictEqual(
+      await readFile(
+        join(output, '@koromix', 'koffi-linux-x64', 'linux_x64', 'koffi.node'),
+        'utf8'
+      ),
+      'native module'
+    )
+    assert.ok(
+      !(await readdir(join(output, '@koromix', 'koffi-linux-x64'))).includes(
+        'musl_x64'
+      )
+    )
+  })
+
+  it('rejects a mismatched native package before replacing output', async t => {
+    const root = await createTempDirectory(t)
+    const source = join(root, 'node_modules')
+    const output = join(root, 'out', 'node_modules')
+    await mkdir(join(source, 'koffi'), { recursive: true })
+    await mkdir(join(source, '@koromix', 'koffi-linux-x64'), {
+      recursive: true,
+    })
+    await mkdir(output, { recursive: true })
+    await writeFile(join(output, 'keep'), 'previous output')
+    await writeFile(
+      join(source, 'koffi', 'package.json'),
+      '{"version":"3.2.1"}'
+    )
+    await writeFile(
+      join(source, '@koromix', 'koffi-linux-x64', 'package.json'),
+      '{"version":"3.1.0"}'
+    )
+
+    assert.throws(
+      () => copyKoffiDependency(source, output, 'linux', 'x64'),
+      /Mismatched Koffi native package/
+    )
+    assert.strictEqual(
+      await readFile(join(output, 'keep'), 'utf8'),
+      'previous output'
+    )
+  })
+})
 
 describe('copyCopilotDependency', () => {
   for (const platform of ['darwin', 'win32', 'linux'] as const) {

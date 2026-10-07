@@ -40,6 +40,18 @@ if (process.platform === 'darwin') {
   packageOSX()
 } else if (process.platform === 'win32') {
   packageWindows()
+} else if (process.platform === 'linux') {
+  cp.execFileSync(
+    'python3',
+    [
+      path.join(__dirname, 'linux', 'package_deb.py'),
+      '--app-dir',
+      distPath,
+      '--arch',
+      getDistArchitecture(),
+    ],
+    { stdio: 'inherit' }
+  )
 } else {
   console.error(`I don't know how to package for ${process.platform} :(`)
   process.exit(1)

@@ -66,7 +66,8 @@ import { updateLicenseDump } from './licenses/update-license-dump'
 import { verifyInjectedSassVariables } from './validate-sass/validate-all'
 import { join } from 'path'
 import assert from 'assert'
-import { copyCopilotDependency } from './copilot'
+import { copyCopilotDependency, copyKoffiDependency } from './copilot'
+import { copyEmojiAssets } from './emoji'
 
 const isPublishableBuild = isPublishable()
 const isDevelopmentBuild = getChannel() === 'development'
@@ -192,15 +193,18 @@ async function packageApp() {
 
   const iconPath = getIconDirectory()
   const assetsCarPath = join(iconPath, 'Assets.car')
-  assert(
-    existsSync(assetsCarPath),
-    `Unable to find Assets.car at ${assetsCarPath}`
-  )
+  if (process.platform === 'darwin') {
+    assert(
+      existsSync(assetsCarPath),
+      `Unable to find Assets.car at ${assetsCarPath}`
+    )
+  }
 
   return packager({
     name: getExecutableName(),
     platform: toPackagePlatform(process.platform),
     arch: toPackageArch(process.env.TARGET_ARCH),
+    electronZipDir: process.env.DESKTOP_ELECTRON_ZIP_DIR,
     asar: false, // TODO: Probably wanna enable this down the road.
     out: getDistRoot(),
     // Packager probes for a sibling .icon file and requires macOS 26 to compile
@@ -209,7 +213,7 @@ async function packageApp() {
       iconPath,
       process.platform === 'darwin' ? 'icon-logo-legacy.icns' : 'icon-logo'
     ),
-    extraResource: [assetsCarPath],
+    extraResource: process.platform === 'darwin' ? [assetsCarPath] : [],
     dir: outRoot,
     overwrite: true,
     tmpdir: false,
@@ -266,23 +270,8 @@ async function packageApp() {
   })
 }
 
-function removeAndCopy(source: string, destination: string) {
-  rmSync(destination, { recursive: true, force: true })
-  cpSync(source, destination, { recursive: true, verbatimSymlinks: true })
-}
-
 function copyEmoji() {
-  const emojiImages = path.join(projectRoot, 'gemoji', 'images', 'emoji')
-  const emojiImagesDestination = path.join(outRoot, 'emoji')
-  removeAndCopy(emojiImages, emojiImagesDestination)
-
-  // Remove unicode-based emoji images (use the unicode emojis instead)
-  const emojiImagesUnicode = path.join(emojiImagesDestination, 'unicode')
-  rmSync(emojiImagesUnicode, { recursive: true, force: true })
-
-  const emojiJSON = path.join(projectRoot, 'gemoji', 'db', 'emoji.json')
-  const emojiJSONDestination = path.join(outRoot, 'emoji.json')
-  removeAndCopy(emojiJSON, emojiJSONDestination)
+  copyEmojiAssets(path.join(projectRoot, 'gemoji'), outRoot)
 }
 
 function copyStaticResources() {
@@ -335,6 +324,9 @@ function copyDependencies() {
   // The product name changes depending on whether it's a prod build or dev
   // build, so that we can have them running side by side.
   pkg.productName = getProductName()
+  if (process.platform === 'linux') {
+    pkg.name = 'git-desktop'
+  }
   pkg.dependencies = filterExternals(pkg.dependencies)
   pkg.devDependencies =
     isDevelopmentBuild && pkg.devDependencies
@@ -348,7 +340,19 @@ function copyDependencies() {
   })
 
   console.log('  Installing dependencies via yarn…')
-  cp.execSync('yarn install', { cwd: outRoot, env: process.env })
+  cp.execSync('yarn install', {
+    cwd: outRoot,
+    env: process.env,
+    stdio: 'inherit',
+  })
+
+  console.log('  Copying the Copilot FFI dependency…')
+  copyKoffiDependency(
+    path.join(projectRoot, 'app', 'node_modules'),
+    path.join(outRoot, 'node_modules'),
+    process.platform,
+    getDistArchitecture()
+  )
 
   console.log('  Copying desktop-askpass-trampoline…')
   const trampolineSource = path.resolve(

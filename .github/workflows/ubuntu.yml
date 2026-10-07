@@ -1,0 +1,161 @@
+name: Ubuntu package and release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ubuntu]
+    tags: ['ubuntu-v*']
+  pull_request:
+    branches: [ubuntu]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ubuntu-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    # Compile native modules on the oldest target Ubuntu release.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      RELEASE_CHANNEL: production
+      TARGET_ARCH: x64
+      npm_config_arch: x64
+      DESKTOP_OAUTH_CLIENT_ID: ${{ secrets.DESKTOP_OAUTH_CLIENT_ID }}
+      DESKTOP_OAUTH_CLIENT_SECRET: ${{ secrets.DESKTOP_OAUTH_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: yarn
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          expected="ubuntu-v$(node -p "require('./app/package.json').version")"
+          test "$RELEASE_TAG" = "$expected"
+      - name: Install build and runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 libsecret-1-dev libgtk-3-0t64 libnss3 libasound2t64 libgbm1 libxss1 libxtst6 libcurl4t64 desktop-file-utils apparmor xvfb xauth dbus-x11 gnome-keyring
+          npm install --global yarn@1.22.22
+      - name: Install project dependencies
+        run: yarn install --frozen-lockfile
+      - name: Validate application and packaging
+        run: |
+          yarn compile:script
+          yarn lint
+          yarn test:ubuntu-package
+          node --import tsx script/emoji-test.ts
+          node --import tsx script/copilot-test.ts
+          apparmor_parser --skip-kernel-load --skip-read-cache --skip-cache script/linux/assets/opt.git-desktop.desktop
+      - name: Build installer
+        run: yarn build:ubuntu
+      - name: Verify and install on Ubuntu 24.04
+        run: |
+          (cd dist && sha256sum --check ./*.deb.sha256)
+          sudo apt-get install -y ./dist/git-desktop_*_amd64.deb
+          python3 script/linux/check_runtime.py /opt/git-desktop
+      - name: Run unit tests
+        run: dbus-run-session -- yarn test:unit
+      - name: Run installed application smoke tests
+        run: xvfb-run -a dbus-run-session -- yarn test:e2e:run:packaged
+        env:
+          DESKTOP_E2E_APP_PATH: /opt/git-desktop/desktop
+      - name: Upload tested installer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: git-desktop-ubuntu-amd64
+          compression-level: 0
+          path: |
+            dist/git-desktop_*_amd64.deb
+            dist/git-desktop_*_amd64.deb.sha256
+          if-no-files-found: error
+      - name: Upload smoke test diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: git-desktop-ubuntu-smoke-diagnostics
+          path: playwright-videos/**
+          if-no-files-found: ignore
+
+  install-newer-ubuntu:
+    needs: build
+    runs-on: ubuntu-24.04
+    container: ubuntu:26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: git-desktop-ubuntu-amd64
+          path: dist
+      - name: Verify and install on Ubuntu 26.04
+        run: |
+          cd dist
+          sha256sum --check ./*.deb.sha256
+          apt-get update
+          apt-get install -y ./*.deb python3
+      - name: Check installed runtime libraries
+        run: python3 script/linux/check_runtime.py /opt/git-desktop
+
+  release:
+    needs: [build, install-newer-ubuntu]
+    if: startsWith(github.ref, 'refs/tags/ubuntu-v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: git-desktop-ubuntu-amd64
+          path: dist
+      - name: Publish tested installer to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          cd dist
+          sha256sum --check ./*.deb.sha256
+          package_version=$(dpkg-deb --field ./*.deb Version)
+          package_name=$(basename ./*.deb)
+          cat > release-notes.md <<EOF
+          Community Ubuntu GNOME port of GitHub Desktop, version ${RELEASE_TAG#ubuntu-v}.
+          Package version: $package_version. Architecture: amd64 (x86_64).
+
+          Built on Ubuntu 24.04. Package installation and native libraries checked
+          on Ubuntu 24.04 and 26.04; application smoke tests run under virtual X11.
+          Full GNOME Wayland/X11 and live GitHub authentication need desktop testing.
+
+          Download the .deb and .deb.sha256 assets into the same directory, then run:
+
+              sha256sum --check '$package_name.sha256'
+              sudo apt install './$package_name'
+              git-desktop
+
+          Electron, Git, and native helpers are included. No Node.js or Yarn is
+          required to install. Company repositories may require approval of the
+          build's OAuth app. See the repository README for details and upgrades.
+          EOF
+          release_flags=()
+          if [[ "${RELEASE_TAG#ubuntu-v}" == *-* ]]; then
+            release_flags+=(--prerelease)
+          fi
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" ./*.deb ./*.deb.sha256
+          else
+            gh release create "$RELEASE_TAG" --verify-tag \
+              --title "Git Desktop for Ubuntu ${RELEASE_TAG#ubuntu-v}" \
+              --notes-file release-notes.md "${release_flags[@]}" \
+              ./*.deb ./*.deb.sha256
+          fi

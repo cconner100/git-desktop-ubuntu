@@ -188,10 +188,13 @@ export const test = base.extend<{}, E2EFixtures>({
           SSH_AUTH_SOCK: '',
           GIT_SSH_COMMAND: 'false',
         },
-        recordVideo: {
-          dir: path.join(projectRoot, 'playwright-videos'),
-          size: { width: 1280, height: 800 },
-        },
+        recordVideo:
+          process.env.DESKTOP_E2E_RECORD_VIDEO === '0'
+            ? undefined
+            : {
+                dir: path.join(projectRoot, 'playwright-videos'),
+                size: { width: 1280, height: 800 },
+              },
         timeout: 30000,
       })
 
