@@ -1,7 +1,6 @@
 import {
   exec,
   GitError as DugiteError,
-  parseError,
   IGitResult as DugiteResult,
   IGitExecutionOptions as DugiteExecutionOptions,
   parseBadConfigValueErrorInfo,
@@ -17,6 +16,7 @@ import { kStringMaxLength } from 'buffer'
 import { withHooksEnv } from '../hooks/with-hooks-env'
 import { coerceToString } from './coerce-to-string'
 import { pushTerminalChunk } from './push-terminal-chunk'
+import { parseGitError } from './parse-error'
 
 export const isMaxBufferExceededError = (
   error: unknown
@@ -326,9 +326,9 @@ export async function git(
             ? opts.successExitCodes.has(exitCode)
             : false
           if (!acceptableExitCode) {
-            gitError = parseError(coerceToString(result.stderr))
+            gitError = parseGitError(coerceToString(result.stderr))
             if (gitError === null) {
-              gitError = parseError(coerceToString(result.stdout))
+              gitError = parseGitError(coerceToString(result.stdout))
             }
           }
 

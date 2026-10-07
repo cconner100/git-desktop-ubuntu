@@ -13,9 +13,9 @@ release or a rewrite using GTK/libadwaita widgets.
 
 | Item | Current release |
 | --- | --- |
-| Application version | **3.6.7-beta2** (prerelease) |
-| Ubuntu package version | **3.6.7~beta2-1** |
-| Release tag | **ubuntu-v3.6.7-beta2** |
+| Application version | **3.6.7-beta2-ubuntu.1** (prerelease) |
+| Ubuntu package version | **3.6.7~beta2-ubuntu.1-1** |
+| Release tag | **ubuntu-v3.6.7-beta2-ubuntu.1** |
 | Target desktops | Ubuntu **24.04 LTS** and **26.04 LTS**, with GNOME |
 | Architecture | **amd64 / x86_64** (Intel or AMD 64-bit) |
 
@@ -29,14 +29,14 @@ Copilot features require the appropriate account access.
 
 1. Open the [Releases page](https://github.com/cconner100/git-desktop-ubuntu/releases)
    and select the newest Ubuntu release, including prereleases.
-2. Download both `git-desktop_3.6.7~beta2-1_amd64.deb` and
-   `git-desktop_3.6.7~beta2-1_amd64.deb.sha256` from its **Assets**.
+2. Download both `git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb` and
+   `git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb.sha256` from its **Assets**.
 3. Open a terminal in the download directory and run:
 
    ```bash
-   sha256sum --check 'git-desktop_3.6.7~beta2-1_amd64.deb.sha256'
+   sha256sum --check 'git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb.sha256'
    sudo apt update
-   sudo apt install './git-desktop_3.6.7~beta2-1_amd64.deb'
+   sudo apt install './git-desktop_3.6.7~beta2-ubuntu.1-1_amd64.deb'
    ```
 
 4. Launch **Git Desktop** from GNOME's application menu, or run:
@@ -137,8 +137,8 @@ branch builds provide Actions artifacts without creating a release.
 To publish the current version after committing changes:
 
 ```bash
-git tag ubuntu-v3.6.7-beta2
-git push origin ubuntu-v3.6.7-beta2
+git tag ubuntu-v3.6.7-beta2-ubuntu.1
+git push origin ubuntu-v3.6.7-beta2-ubuntu.1
 ```
 
 For a new release, update `app/package.json` and the version/installation examples
